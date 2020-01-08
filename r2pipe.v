@@ -17,7 +17,8 @@ pub fn new() R2Pipe {
 	inp := os.getenv('R2PIPE_IN')
 	out := os.getenv('R2PIPE_OUT')
 	if inp == '' || out == '' {
-		return &R2Pipe{}
+		eprintln('Cannot find R2PIPE_IN|OUT')
+		return &R2Pipe{-1,-1}
 	}
 	mut r2 := R2Pipe{}
 	r2.inp = inp.int()
@@ -26,7 +27,12 @@ pub fn new() R2Pipe {
 }
 
 pub fn (r2 &R2Pipe)cmd(command string) string {
-	C.write(r2.out, '${command}\n', command.len + 1)
+	if r2.inp == -1 {
+		eprintln('No R2PIPE_IN|OUT found.')
+		return ''
+	}
+	C.write(r2.out, '${command}\n'.str, command.len + 1)
+	eprintln('written')
 	mut buf := [1024]int
 	for true {
 		C.read(r2.inp, buf, 1)
