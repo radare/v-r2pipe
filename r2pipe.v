@@ -5,6 +5,7 @@ import os
 // extern
 pub fn C.write(fd int, buf byteptr, len int) int
 pub fn C.read(fd int, buf byteptr, len int) int
+pub fn C.close(fd int) int
 
 pub struct R2Pipe {
 mut:
