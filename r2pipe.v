@@ -13,6 +13,15 @@ mut:
 	out int
 }
 
+pub fn spawn() R2Pipe {
+	eprintln('R2Pipe.spawn is not yet implemented')
+	// spawn r2 -q0
+	// read 00
+	// write cmd + 00
+	// read response + 00
+	// C.pipe()
+}
+
 pub fn new() R2Pipe {
 	inp := os.getenv('R2PIPE_IN')
 	out := os.getenv('R2PIPE_OUT')
@@ -27,22 +36,32 @@ pub fn new() R2Pipe {
 }
 
 pub fn (r2 &R2Pipe)cmd(command string) string {
-	if r2.inp == -1 {
-		eprintln('No R2PIPE_IN|OUT found.')
-		return ''
-	}
-	C.write(r2.out, '${command}\n'.str, command.len + 1)
-	eprintln('written')
-	mut buf := [1024]int
-	for true {
-		C.read(r2.inp, buf, 1)
-		println('FIRST CHAR ${buf[0]}')
-	}
-	return 'jiji'
+ 	if r2.inp < 0 {
+ 		return ''
+ 	}
+ 	sendcmd := '${command}\n'
+ 	C.write(r2.out, sendcmd.str, sendcmd.len)
+ 	maxsz := 4096
+ 	mut buf := malloc(maxsz)
+ 	mut ch := [1]byte
+ 	mut x := 0
+ 	for x < maxsz {
+ 		eprintln('lets read from ${r2.inp}')
+ 		C.read(r2.inp, ch, 1)
+ 		buf[x++] = ch[0]
+ 		if ch[0] == 0 {
+ 			break
+ 		}
+ 	}
+ 	return string(buf, x)
 }
 
 pub fn (r2 &R2Pipe)free() {
-	C.close(r2.inp)
-	C.close(r2.out)
-	free(r2)
+ 	if r2.inp >= 0 {
+ 		C.close(r2.inp)
+ 	}
+ 	if r2.out >= 0 {
+ 		C.close(r2.out)
+ 	}
+ 	//free(r2)
 }
