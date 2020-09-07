@@ -69,7 +69,7 @@ pub fn new() R2Pipe {
 	if inp == '' || out == '' {
 		eprintln('Cannot find R2PIPE_IN|OUT')
 		return R2Pipe{-1, -1, -1}
-	}
+}
 	mut r2 := R2Pipe{}
 	r2.inp = inp.int()
 	r2.out = out.int()
@@ -77,27 +77,28 @@ pub fn new() R2Pipe {
 }
 
 pub fn (r2 &R2Pipe)cmd(command string) string {
- 	if r2.inp < 0 {
- 		return ''
- 	}
- 	sendcmd := '${command}\n'
- 	C.write(r2.out, sendcmd.str, sendcmd.len)
- 	maxsz := 1024 * 32
- 	mut buf := malloc(maxsz)
- 	mut ch := [1]byte{}
- 	mut x := 0
- 	for x < maxsz {
- 		if C.read(r2.inp, ch, 1) == -1 {
+	if r2.inp < 0 {
+		return ''
+	}
+	cmd := command.replace('\n', ';')
+	sendcmd := '$cmd\n'
+	C.write(r2.out, sendcmd.str, sendcmd.len)
+	maxsz := 1024 * 32
+	mut buf := malloc(maxsz)
+	mut ch := [1]byte{}
+	mut x := 0
+	for x < maxsz {
+		if C.read(r2.inp, ch, 1) == -1 {
 			break
 		}
 		unsafe {
 			buf[x] = ch[0]
 		}
 		x++
- 		if ch[0] == 0 {
- 			break
- 		}
- 	}
+		if ch[0] == 0 {
+			break
+		}
+	}
 	unsafe {
 		// return string(buf, x)
 		return buf.vstring_with_len(x)
@@ -105,16 +106,16 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 }
 
 pub fn (mut r2 R2Pipe)free() {
- 	if r2.inp >= 0 {
- 		C.close(r2.inp)
+	if r2.inp >= 0 {
+		C.close(r2.inp)
 		r2.inp = -1
- 	}
- 	if r2.out >= 0 {
- 		C.close(r2.out)
+	}
+	if r2.out >= 0 {
+		C.close(r2.out)
 		r2.inp = -1
- 	}
+	}
 	if r2.child > 0 {
 		C.kill(r2.child, 9)
 	}
- 	//free(r2)
+	//free(r2)
 }
