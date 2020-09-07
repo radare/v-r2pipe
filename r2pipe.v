@@ -94,10 +94,10 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 		unsafe {
 			buf[x] = ch[0]
 		}
-		x++
 		if ch[0] == 0 {
 			break
 		}
+		x++
 	}
 	unsafe {
 		// return string(buf, x)
