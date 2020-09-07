@@ -91,11 +91,11 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 		if C.read(r2.inp, ch, 1) == -1 {
 			break
 		}
-		unsafe {
-			buf[x] = ch[0]
-		}
 		if ch[0] == 0 {
 			break
+		}
+		unsafe {
+			buf[x] = ch[0]
 		}
 		x++
 	}
