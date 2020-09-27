@@ -2,13 +2,6 @@ module r2pipe
 
 import os
 
-// extern
-// pub fn C.write(fd int, buf byteptr, len int) int
-/*
-pub fn C.read(fd int, buf byteptr, len int) int
-pub fn C.close(fd int) int
-pub fn C.fork() int
-*/
 pub fn C.pipe(fd [2]int) int
 pub fn C.dup2(fd int, fd2 int) int
 pub fn C.kill(pid int, sig int) int
@@ -51,11 +44,6 @@ pub fn spawn(file, cmd string) ?R2Pipe {
 		}
 		exit(0)
 	}
-	// spawn r2 -q0
-	// read 00
-	// write cmd + 00
-	// read response + 00
-	// C.pipe()
 	return R2Pipe {
 		inp: output[0]
 		out: input[1]
@@ -69,7 +57,7 @@ pub fn new() R2Pipe {
 	if inp == '' || out == '' {
 		eprintln('Cannot find R2PIPE_IN|OUT')
 		return R2Pipe{-1, -1, -1}
-}
+	}
 	mut r2 := R2Pipe{}
 	r2.inp = inp.int()
 	r2.out = out.int()
@@ -100,7 +88,6 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 		x++
 	}
 	unsafe {
-		// return string(buf, x)
 		return buf.vstring_with_len(x)
 	}
 }
@@ -117,5 +104,4 @@ pub fn (mut r2 R2Pipe)free() {
 	if r2.child > 0 {
 		C.kill(r2.child, 9)
 	}
-	//free(r2)
 }
