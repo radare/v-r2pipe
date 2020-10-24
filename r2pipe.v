@@ -13,7 +13,7 @@ mut:
 	child int
 }
 
-pub fn spawn(file, cmd string) ?R2Pipe {
+pub fn spawn(file string, cmd string) ?R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
 	C.pipe (input)
