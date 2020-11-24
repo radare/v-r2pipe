@@ -2,10 +2,6 @@ module r2pipe
 
 import os
 
-pub fn C.pipe(fd [2]int) int
-pub fn C.dup2(fd int, fd2 int) int
-pub fn C.kill(pid int, sig int) int
-
 pub struct R2Pipe {
 mut:
 	inp int
