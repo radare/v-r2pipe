@@ -4,23 +4,23 @@ import os
 
 pub struct R2Pipe {
 mut:
-	inp int
-	out int
+	inp   int
+	out   int
 	child int
 	sides []R2PipeSide
 }
 
 pub struct R2PipeSide {
 pub:
-	name string
-	path string
+	name      string
+	path      string
 	direction bool // 0 = read, 1 = write
 pub mut:
 	user voidptr
-	cb EventCallback
+	cb   EventCallback
 }
 
-pub fn (s R2PipeSide)write(a string) {
+pub fn (s R2PipeSide) write(a string) {
 	unsafe {
 		fd := os.vfopen(s.path, 'wb') or { return }
 		C.puts(a.str)
@@ -32,14 +32,14 @@ pub fn (s R2PipeSide)write(a string) {
 pub fn spawn(file string, cmd string) ?R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
-	C.pipe (&input[0])
-	C.pipe (&output[0])
+	C.pipe(&input[0])
+	C.pipe(&output[0])
 	pid := C.fork()
 	if pid < 0 {
 		return error('cannot fork')
 	}
-//	os.setenv ("R2PIPE_IN", input[0], true)
-//	os.setenv ("R2PIPE_OUT", output[1], true)
+	//	os.setenv ("R2PIPE_IN", input[0], true)
+	//	os.setenv ("R2PIPE_OUT", output[1], true)
 	if pid > 0 {
 		ch := byte(0)
 		// parent
@@ -60,7 +60,7 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 		}
 		exit(0)
 	}
-	return R2Pipe {
+	return R2Pipe{
 		inp: output[0]
 		out: input[1]
 		child: pid
@@ -80,9 +80,9 @@ pub fn new() R2Pipe {
 	return r2
 }
 
-pub type EventCallback = fn(s R2PipeSide, msg string)
+pub type EventCallback = fn (s R2PipeSide, msg string)
 
-pub fn (s R2PipeSide)read_fifo(cb EventCallback) {
+pub fn (s R2PipeSide) read_fifo(cb EventCallback) {
 	unsafe {
 		fd := C.open(s.path.str, 0)
 		// fd := os.vfopen(s.path, 'rb') or { return }
@@ -91,7 +91,7 @@ pub fn (s R2PipeSide)read_fifo(cb EventCallback) {
 }
 
 // fn (s R2PipeSide)read_fifo_loop(fd &C.FILE, cb EventCallback) {
-fn (s R2PipeSide)read_fifo_loop(fd int, cb EventCallback) {
+fn (s R2PipeSide) read_fifo_loop(fd int, cb EventCallback) {
 	unsafe {
 		for {
 			data := [1024]char{}
@@ -102,14 +102,14 @@ fn (s R2PipeSide)read_fifo_loop(fd int, cb EventCallback) {
 				break
 			}
 			data[int(res)] = char(0)
-			cb (s, (&data[0]).vstring())
+			cb(s, (&data[0]).vstring())
 		}
 		C.fclose(fd)
 	}
 }
 
-pub fn (mut r2 R2Pipe)on(event string, user voidptr, cb EventCallback) &R2PipeSide {
-	path := r2.cmd('===${event}').trim_space()
+pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb EventCallback) &R2PipeSide {
+	path := r2.cmd('===$event').trim_space()
 	e := &R2PipeSide{
 		name: event
 		path: path
@@ -118,17 +118,17 @@ pub fn (mut r2 R2Pipe)on(event string, user voidptr, cb EventCallback) &R2PipeSi
 		cb: cb
 	}
 	r2.sides << e
-eprintln('redirect errmsg to $e.path')
+	eprintln('redirect errmsg to $e.path')
 	if e.direction {
 		eprintln('writeable events not yet implemented')
 	} else {
-		e.read_fifo (cb)
+		e.read_fifo(cb)
 	}
 	return e
 }
 
 [direct_array_access]
-pub fn (r2 &R2Pipe)cmd(command string) string {
+pub fn (r2 &R2Pipe) cmd(command string) string {
 	if r2.inp < 0 {
 		return ''
 	}
@@ -147,18 +147,18 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 			if ch[0] == 0 {
 				break
 			}
-				buf[x] = ch[0]
+			buf[x] = ch[0]
 			x++
 		}
 		return buf.vstring_with_len(x)
 	}
 }
 
-pub fn (mut r2 R2Pipe)free() {
+pub fn (mut r2 R2Pipe) free() {
 	if r2.sides.len > 0 {
-		// r2cmd 
+		// r2cmd
 		for s in r2.sides {
-			r2.cmd('===-${s.name}')
+			r2.cmd('===-$s.name')
 			os.rm(s.path) or {}
 		}
 	}

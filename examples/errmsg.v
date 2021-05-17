@@ -1,25 +1,23 @@
 module main
 
 import time
-import r2pipe
+import examples.r2pipe
 
 fn main() {
 	mut works := false
-	mut r := r2pipe.spawn('/bin/ls', '') or {
-		panic(err)
-	}
-	print('cmd: ${r.cmd("?e hello")}')
+	mut r := r2pipe.spawn('/bin/ls', '') or { panic(err) }
+	print('cmd: ${r.cmd('?e hello')}')
 	// receive messages asyncronously taken from r2's stderr
 	// ATM only errmsg is supported and it's experimental feature
 	r.on('errmsg', works, fn (s r2pipe.R2PipeSide, msg string) {
 		unsafe {
 			mut works := &bool(s.user)
-			eprintln("err: $msg")
+			eprintln('err: $msg')
 			*works = true
 		}
 	})
 	r.cmd('Z') // trigger invalid command
-	print('cmd: ${r.cmd("?e world")}')
+	print('cmd: ${r.cmd('?e world')}')
 	// input_side := r.on('child_input', fn (err string) { })
 	// input_side.write('HELLO WORLD\n')
 
