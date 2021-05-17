@@ -1,6 +1,5 @@
 module main
 
-import time
 import examples.r2pipe
 
 fn main() {
