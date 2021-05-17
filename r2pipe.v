@@ -7,8 +7,28 @@ mut:
 	inp int
 	out int
 	child int
+	sides []R2PipeSide
 }
 
+pub struct R2PipeSide {
+pub:
+	name string
+	path string
+	direction bool // 0 = read, 1 = write
+pub mut:
+	user voidptr
+	cb EventCallback
+}
+
+pub fn (s R2PipeSide)write(a string) {
+	unsafe {
+		fd := os.vfopen(s.path, 'wb') or { return }
+		C.puts(a.str)
+		C.fclose(fd)
+	}
+}
+
+[direct_array_access]
 pub fn spawn(file string, cmd string) ?R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
@@ -52,12 +72,59 @@ pub fn new() R2Pipe {
 	out := os.getenv('R2PIPE_OUT')
 	if inp == '' || out == '' {
 		eprintln('Cannot find R2PIPE_IN|OUT')
-		return R2Pipe{-1, -1, -1}
+		return R2Pipe{-1, -1, -1, []}
 	}
 	mut r2 := R2Pipe{}
 	r2.inp = inp.int()
 	r2.out = out.int()
 	return r2
+}
+
+pub type EventCallback = fn(s R2PipeSide, msg string)
+
+pub fn (s R2PipeSide)read_fifo(cb EventCallback) {
+	unsafe {
+		fd := C.open(s.path.str, 0)
+		// fd := os.vfopen(s.path, 'rb') or { return }
+		go s.read_fifo_loop(fd, cb)
+	}
+}
+
+// fn (s R2PipeSide)read_fifo_loop(fd &C.FILE, cb EventCallback) {
+fn (s R2PipeSide)read_fifo_loop(fd int, cb EventCallback) {
+	unsafe {
+		for {
+			data := [1024]char{}
+			res := C.read(fd, &data[0], data.len)
+			eprintln('${int(res)}')
+			if res <= 0 {
+				eprintln('read error from fifo. closing')
+				break
+			}
+			data[int(res)] = char(0)
+			cb (s, (&data[0]).vstring())
+		}
+		C.fclose(fd)
+	}
+}
+
+pub fn (mut r2 R2Pipe)on(event string, user voidptr, cb EventCallback) &R2PipeSide {
+	path := r2.cmd('===${event}').trim_space()
+	e := &R2PipeSide{
+		name: event
+		path: path
+		direction: false
+		user: user
+		cb: cb
+	}
+	r2.sides << e
+eprintln('redirect errmsg to $e.path')
+	if e.direction {
+		eprintln('writeable events not yet implemented')
+	} else {
+		e.read_fifo (cb)
+	}
+	return e
 }
 
 [direct_array_access]
@@ -88,6 +155,14 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 }
 
 pub fn (mut r2 R2Pipe)free() {
+	if r2.sides.len > 0 {
+		// r2cmd 
+		for s in r2.sides {
+			r2.cmd('===-${s.name}')
+			os.rm(s.path) or {}
+		}
+	}
+	r2.sides = []
 	if r2.inp >= 0 {
 		C.close(r2.inp)
 		r2.inp = -1
