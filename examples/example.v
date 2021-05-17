@@ -1,4 +1,4 @@
-import examples.r2pipe
+import r2pipe
 
 fn main() {
 	mut r2 := r2pipe.spawn('/bin/ls', '') or { panic(err) }
