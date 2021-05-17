@@ -12,8 +12,8 @@ mut:
 pub fn spawn(file string, cmd string) ?R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
-	C.pipe (input)
-	C.pipe (output)
+	C.pipe (&input[0])
+	C.pipe (&output[0])
 	pid := C.fork()
 	if pid < 0 {
 		return error('cannot fork')
@@ -60,6 +60,7 @@ pub fn new() R2Pipe {
 	return r2
 }
 
+[direct_array_access]
 pub fn (r2 &R2Pipe)cmd(command string) string {
 	if r2.inp < 0 {
 		return ''
@@ -68,22 +69,20 @@ pub fn (r2 &R2Pipe)cmd(command string) string {
 	sendcmd := '$cmd\n'
 	C.write(r2.out, sendcmd.str, sendcmd.len)
 	maxsz := 1024 * 32
-	mut buf := malloc(maxsz)
-	mut ch := [1]byte{}
-	mut x := 0
-	for x < maxsz {
-		if C.read(r2.inp, ch, 1) == -1 {
-			break
-		}
-		if ch[0] == 0 {
-			break
-		}
-		unsafe {
-			buf[x] = ch[0]
-		}
-		x++
-	}
 	unsafe {
+		mut buf := malloc(maxsz)
+		mut ch := [1]byte{}
+		mut x := 0
+		for x < maxsz {
+			if C.read(r2.inp, voidptr(&ch), 1) == -1 {
+				break
+			}
+			if ch[0] == 0 {
+				break
+			}
+				buf[x] = ch[0]
+			x++
+		}
 		return buf.vstring_with_len(x)
 	}
 }
