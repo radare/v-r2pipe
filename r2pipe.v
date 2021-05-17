@@ -118,7 +118,7 @@ pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb EventCallback) &R2PipeS
 		cb: cb
 	}
 	r2.sides << e
-	eprintln('redirect errmsg to $e.path')
+	// eprintln('redirect errmsg to $e.path')
 	if e.direction {
 		eprintln('writeable events not yet implemented')
 	} else {
