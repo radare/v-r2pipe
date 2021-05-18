@@ -2,6 +2,8 @@ module r2pipe
 
 import os
 
+pub type SideCallback = fn (s R2PipeSide, msg string)
+
 pub struct R2Pipe {
 mut:
 	inp   int
@@ -17,7 +19,7 @@ pub:
 	direction bool // 0 = read, 1 = write
 pub mut:
 	user voidptr
-	cb   EventCallback
+	cb   SideCallback
 }
 
 pub fn (s R2PipeSide) write(a string) {
@@ -80,9 +82,7 @@ pub fn new() R2Pipe {
 	return r2
 }
 
-pub type EventCallback = fn (s R2PipeSide, msg string)
-
-pub fn (s R2PipeSide) read_fifo(cb EventCallback) {
+pub fn (s R2PipeSide) read_fifo(cb SideCallback) {
 	unsafe {
 		fd := C.open(s.path.str, 0)
 		// fd := os.vfopen(s.path, 'rb') or { return }
@@ -90,8 +90,8 @@ pub fn (s R2PipeSide) read_fifo(cb EventCallback) {
 	}
 }
 
-// fn (s R2PipeSide)read_fifo_loop(fd &C.FILE, cb EventCallback) {
-fn (s R2PipeSide) read_fifo_loop(fd int, cb EventCallback) {
+// fn (s R2PipeSide)read_fifo_loop(fd &C.FILE, cb SideCallback) {
+fn (s R2PipeSide) read_fifo_loop(fd int, cb SideCallback) {
 	unsafe {
 		for {
 			data := [1024]char{}
@@ -108,7 +108,7 @@ fn (s R2PipeSide) read_fifo_loop(fd int, cb EventCallback) {
 	}
 }
 
-pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb EventCallback) &R2PipeSide {
+pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb SideCallback) &R2PipeSide {
 	path := r2.cmd('===$event').trim_space()
 	e := &R2PipeSide{
 		name: event
