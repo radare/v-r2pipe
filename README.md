@@ -44,6 +44,24 @@ fn main() {
 
 ```
 
+## Side Channel
+
+r2pipe.v introduces a new api to capture the output of the stderr messages printed by r2
+to the user. This channel is async, and can contain anything unstructured, so it's not
+breaking backward compatibility and enables the users to also use this side pipe to
+comunicate with the target process when running in debugger mode for example.
+
+This is implemented by making r2pipe run a command in r2 that redirects the stderr to
+a pipe, socket or file, which is then handled as an event captured in the r2 side.
+
+```go
+import r2pipe
+
+fn main() {
+	mut r := r2pipe.spawn('/bin/ls', '')
+	r.on('errmsg', 
+}
+```
 
 ## Example
 

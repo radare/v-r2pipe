@@ -8,17 +8,21 @@ fn main() {
 	print('cmd: ${r.cmd('?e hello')}')
 	// receive messages asyncronously taken from r2's stderr
 	// ATM only errmsg is supported and it's experimental feature
-	r.on('errmsg', works, fn (s r2pipe.R2PipeSide, msg string) {
+	r.on('errmsg', works, fn (s r2pipe.R2PipeSide, msg string) bool {
 		unsafe {
 			mut works := &bool(s.user)
-			eprintln('err: $msg')
+			eprintln('err:((( $msg )))')
 			*works = true
+			// close the side channel and the waiting thread
+			// return false
 		}
+		return true
 	})
 	r.cmd('Z') // trigger invalid command
-	print('cmd: ${r.cmd('?e world')}')
+	// print('cmd: ${r.cmd("?e world")}')
 	// input_side := r.on('child_input', fn (err string) { })
 	// input_side.write('HELLO WORLD\n')
+	C.sleep(1)
 
 	// Close and remove all the event handlers
 	r.free()
@@ -30,4 +34,6 @@ fn main() {
 		println('test failed, no errmsg was received')
 		exit(1)
 	}
+
+	exit(0)
 }

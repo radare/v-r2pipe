@@ -2,7 +2,7 @@ module r2pipe
 
 import os
 
-pub type SideCallback = fn (s R2PipeSide, msg string)
+pub type SideCallback = fn (s R2PipeSide, msg string) bool
 
 pub struct R2Pipe {
 mut:
@@ -12,14 +12,17 @@ mut:
 	sides []R2PipeSide
 }
 
+[heap]
 pub struct R2PipeSide {
 pub:
 	name      string
 	path      string
 	direction bool // 0 = read, 1 = write
 pub mut:
+	fd   int
 	user voidptr
 	cb   SideCallback
+	th thread
 }
 
 pub fn (s R2PipeSide) write(a string) {
@@ -82,51 +85,65 @@ pub fn new() R2Pipe {
 	return r2
 }
 
-pub fn (s R2PipeSide) read_fifo(cb SideCallback) {
-	unsafe {
-		fd := C.open(s.path.str, 0)
-		// fd := os.vfopen(s.path, 'rb') or { return }
-		go s.read_fifo_loop(fd, cb)
+fn C.pthread_kill(thread, int)
+pub fn (mut s R2PipeSide) free() {
+	if s.fd != -1 {
+/*
+unsafe {
+println('pre')
+	//	C.pthread_kill(s.th, C.SIGPIPE)
+println('posu $s.fd')
+		C.close(s.fd)
+println('pos')
+}
+*/
+s.fd = -1
 	}
 }
 
-// fn (s R2PipeSide)read_fifo_loop(fd &C.FILE, cb SideCallback) {
-fn (s R2PipeSide) read_fifo_loop(fd int, cb SideCallback) {
+pub fn (mut s R2PipeSide) read_fifo(cb SideCallback) {
 	unsafe {
+		// fd := os.vfopen(s.path, 'rb') or { return }
 		for {
 			data := [1024]char{}
-			res := C.read(fd, &data[0], data.len)
+			res := C.read(s.fd, &data[0], data.len - 1)
 			eprintln('${int(res)}')
-			if res <= 0 {
+			if res < 1 {
 				eprintln('read error from fifo. closing')
 				break
 			}
 			data[int(res)] = char(0)
-			cb(s, (&data[0]).vstring())
+			if !cb(s, (&data[0]).vstring()) {
+				break
+			}
 		}
-		C.fclose(fd)
+eprintln('closer fd')
+		C.close(s.fd)
+		s.fd = -1
 	}
 }
 
 pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb SideCallback) &R2PipeSide {
 	path := r2.cmd('===$event').trim_space()
-	e := &R2PipeSide{
+	mut side := &R2PipeSide{
 		name: event
 		path: path
 		direction: false
 		user: user
+		fd: C.open(path.str, C.O_CLOEXEC)
 		cb: cb
 	}
-	r2.sides << e
 	// eprintln('redirect errmsg to $e.path')
-	if e.direction {
+	if side.direction {
 		eprintln('writeable events not yet implemented')
 	} else {
-		e.read_fifo(cb)
+		side.th = go side.read_fifo(cb)
 	}
-	return e
+	r2.sides << side
+	return side
 }
 
+fn C.fcntl(int, int, int)
 [direct_array_access]
 pub fn (r2 &R2Pipe) cmd(command string) string {
 	if r2.inp < 0 {
@@ -157,9 +174,10 @@ pub fn (r2 &R2Pipe) cmd(command string) string {
 pub fn (mut r2 R2Pipe) free() {
 	if r2.sides.len > 0 {
 		// r2cmd
-		for s in r2.sides {
+		for mut s in r2.sides {
 			r2.cmd('===-$s.name')
 			os.rm(s.path) or {}
+			s.free()
 		}
 	}
 	r2.sides = []
@@ -173,5 +191,6 @@ pub fn (mut r2 R2Pipe) free() {
 	}
 	if r2.child > 0 {
 		C.kill(r2.child, 9)
+		r2.child = -1
 	}
 }
