@@ -9,17 +9,17 @@ mut:
 	inp   int
 	out   int
 	child int
-	sides []R2PipeSide
+	sides []&R2PipeSide
 }
 
 [heap]
 pub struct R2PipeSide {
 pub:
 	name      string
-	path      string
 	direction bool // 0 = read, 1 = write
 pub mut:
 	fd   int
+	path      string
 	user voidptr
 	cb   SideCallback
 	th thread
@@ -85,29 +85,25 @@ pub fn new() R2Pipe {
 	return r2
 }
 
-fn C.pthread_kill(thread, int)
 pub fn (mut s R2PipeSide) free() {
-	if s.fd != -1 {
-/*
-unsafe {
-println('pre')
-	//	C.pthread_kill(s.th, C.SIGPIPE)
-println('posu $s.fd')
-		C.close(s.fd)
-println('pos')
-}
-*/
-s.fd = -1
+	if s.path != '' {
+		os.rm(s.path) or {}
+		s.path = ''
 	}
+	if s.fd != -1 {
+		s.fd = -1
+	}
+	// XXX wait hangs forever
+	// s.th = thread(0)
+	// s.th.wait()
 }
 
 pub fn (mut s R2PipeSide) read_fifo(cb SideCallback) {
 	unsafe {
 		// fd := os.vfopen(s.path, 'rb') or { return }
 		for {
-			data := [1024]char{}
+			data := [4096]char{}
 			res := C.read(s.fd, &data[0], data.len - 1)
-			eprintln('${int(res)}')
 			if res < 1 {
 				eprintln('read error from fifo. closing')
 				break
@@ -117,9 +113,7 @@ pub fn (mut s R2PipeSide) read_fifo(cb SideCallback) {
 				break
 			}
 		}
-eprintln('closer fd')
-		C.close(s.fd)
-		s.fd = -1
+		s.free()
 	}
 }
 
@@ -176,7 +170,6 @@ pub fn (mut r2 R2Pipe) free() {
 		// r2cmd
 		for mut s in r2.sides {
 			r2.cmd('===-$s.name')
-			os.rm(s.path) or {}
 			s.free()
 		}
 	}

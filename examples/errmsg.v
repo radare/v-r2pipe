@@ -14,6 +14,7 @@ fn main() {
 			eprintln('err:((( $msg )))')
 			*works = true
 			// close the side channel and the waiting thread
+			// commented out because we want to ensure r2pipe deinitializes it properly
 			// return false
 		}
 		return true
