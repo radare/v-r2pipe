@@ -56,10 +56,16 @@ a pipe, socket or file, which is then handled as an event captured in the r2 sid
 
 ```go
 import r2pipe
+import time
 
 fn main() {
 	mut r := r2pipe.spawn('/bin/ls', '')
-	r.on('errmsg', 
+	r.on('errmsg', works, fn (s r2pipe.R2PipeSide, msg string) bool {
+		eprintln('errmsg.received($msg)')
+		return true
+	})
+	r.cmd('Z')
+	r.free()
 }
 ```
 

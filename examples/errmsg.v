@@ -12,7 +12,9 @@ fn main() {
 		unsafe {
 			mut works := &bool(s.user)
 			eprintln('err:((( $msg )))')
-			*works = true
+			if msg.contains('Invalid') {
+				*works = true
+			}
 			// close the side channel and the waiting thread
 			// commented out because we want to ensure r2pipe deinitializes it properly
 			// return false
@@ -23,7 +25,7 @@ fn main() {
 	// print('cmd: ${r.cmd("?e world")}')
 	// input_side := r.on('child_input', fn (err string) { })
 	// input_side.write('HELLO WORLD\n')
-	C.sleep(1)
+//	C.sleep(1)
 
 	// Close and remove all the event handlers
 	r.free()
