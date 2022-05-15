@@ -46,7 +46,7 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 	//	os.setenv ("R2PIPE_IN", input[0], true)
 	//	os.setenv ("R2PIPE_OUT", output[1], true)
 	if pid > 0 {
-		ch := byte(0)
+		ch := u8(0)
 		// parent
 		C.read(output[0], &ch, 1)
 		if ch != 0 {
@@ -149,7 +149,7 @@ pub fn (r2 &R2Pipe) cmd(command string) string {
 	maxsz := 1024 * 32
 	unsafe {
 		mut buf := malloc(maxsz)
-		mut ch := [1]byte{}
+		mut ch := [1]u8{}
 		mut x := 0
 		for x < maxsz {
 			if C.read(r2.inp, voidptr(&ch), 1) == -1 {
