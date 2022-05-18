@@ -2,6 +2,10 @@ module r2pipe
 
 import os
 
+const (
+	r2_path = 'radare2'
+)
+
 pub type SideCallback = fn (s R2PipeSide, msg string) bool
 
 pub struct R2Pipe {
@@ -48,9 +52,20 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 	if pid > 0 {
 		ch := u8(0)
 		// parent
-		C.read(output[0], &ch, 1)
+		res := C.read(output[0], &ch, 1)
+		if res != 1 {
+			return error('cannot read from child process')
+		}
 		if ch != 0 {
-			return error('unexpected handshake $ch')
+			C.fcntl(output[0], C.F_SETFL, C.O_NONBLOCK)
+			mut msg := ''
+			for true {
+				if C.read(output[0], &ch, 1) != 1 {
+					break
+				}
+				msg += rune(ch).str()
+			}
+			return error('unexpected handshake "$msg", expected null byte')
 		}
 	} else {
 		C.close(0)
@@ -58,13 +73,12 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 		C.dup2(input[0], 0)
 		C.dup2(output[1], 1)
 		if cmd == '' {
-			os.execvp('/usr/local/bin/r2', ['r2', '-q0', file]) ?
-			// os.execute('r2 -q0 $file')
+			os.execvp(r2_path, ['-q0', file]) ?
 		} else {
-			// child
-			os.execvp(cmd, [cmd,file]) ?
-			// os.execute('$cmd $file')
+			os.execvp(cmd, [file]) ?
 		}
+		C.close(0)
+		C.close(1)
 		exit(0)
 	}
 	return R2Pipe{
