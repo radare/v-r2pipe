@@ -58,10 +58,12 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 		C.dup2(input[0], 0)
 		C.dup2(output[1], 1)
 		if cmd == '' {
-			os.system('r2 -q0 $file')
+			os.execvp('/usr/local/bin/r2', ['r2', '-q0', file]) ?
+			// os.execute('r2 -q0 $file')
 		} else {
 			// child
-			os.system('$cmd $file')
+			os.execvp(cmd, [cmd,file])
+			// os.execute('$cmd $file')
 		}
 		exit(0)
 	}
