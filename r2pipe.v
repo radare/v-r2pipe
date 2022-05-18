@@ -62,7 +62,7 @@ pub fn spawn(file string, cmd string) ?R2Pipe {
 			// os.execute('r2 -q0 $file')
 		} else {
 			// child
-			os.execvp(cmd, [cmd,file])
+			os.execvp(cmd, [cmd,file]) ?
 			// os.execute('$cmd $file')
 		}
 		exit(0)
