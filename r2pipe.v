@@ -38,7 +38,7 @@ pub fn (s R2PipeSide) write(a string) {
 }
 
 [direct_array_access]
-pub fn spawn(file string, cmd string) ?R2Pipe {
+pub fn r2spawn(file string, cmd string) ?R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
 	C.pipe(&input[0])
