@@ -4,7 +4,7 @@ import r2pipe
 
 fn main() {
 	mut works := false
-	mut r := r2pipe.spawn('/bin/ls', '') or { panic(err) }
+	mut r := r2pipe.r2spawn('/bin/ls', '') or { panic(err) }
 	print('cmd: ${r.cmd('?e hello')}')
 	// receive messages asyncronously taken from r2's stderr
 	// ATM only errmsg is supported and it's experimental feature

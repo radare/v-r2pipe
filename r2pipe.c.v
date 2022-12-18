@@ -38,7 +38,7 @@ pub fn (s R2PipeSide) write(a string) {
 }
 
 [direct_array_access]
-pub fn r2spawn(file string, cmd string) ?R2Pipe {
+pub fn r2spawn(file string, cmd string) !R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
 	C.pipe(&input[0])
@@ -73,9 +73,9 @@ pub fn r2spawn(file string, cmd string) ?R2Pipe {
 		C.dup2(input[0], 0)
 		C.dup2(output[1], 1)
 		if cmd == '' {
-			os.execvp(r2_path, ['-q0', file]) ?
+			os.execvp(r2_path, ['-q0', file])!
 		} else {
-			os.execvp(cmd, [file]) ?
+			os.execvp(cmd, [file])!
 		}
 		C.close(0)
 		C.close(1)
