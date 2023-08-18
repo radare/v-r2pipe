@@ -1,6 +1,6 @@
 module main
 
-import r2pipe
+import examples.r2pipe
 
 fn main() {
 	mut r := r2pipe.r2spawn('/bin/ls', '') or { panic(err) }

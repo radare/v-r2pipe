@@ -1,6 +1,6 @@
 module main
 
-import r2pipe
+import examples.r2pipe
 
 fn main() {
 	mut works := false
@@ -11,7 +11,7 @@ fn main() {
 	r.on('errmsg', works, fn (s r2pipe.R2PipeSide, msg string) bool {
 		unsafe {
 			mut works := &bool(s.user)
-			eprintln('err:((( $msg )))')
+			eprintln('err:((( ${msg} )))')
 			if msg.contains('Invalid') {
 				*works = true
 			}
@@ -25,7 +25,7 @@ fn main() {
 	// print('cmd: ${r.cmd("?e world")}')
 	// input_side := r.on('child_input', fn (err string) { })
 	// input_side.write('HELLO WORLD\n')
-//	C.sleep(1)
+	//	C.sleep(1)
 
 	// Close and remove all the event handlers
 	r.free()

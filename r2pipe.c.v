@@ -23,10 +23,10 @@ pub:
 	direction bool // 0 = read, 1 = write
 pub mut:
 	fd   int
-	path      string
+	path string
 	user voidptr
-	cb   SideCallback
-	th thread
+	cb   SideCallback [required]
+	th   thread
 }
 
 pub fn (s R2PipeSide) write(a string) {
@@ -65,7 +65,7 @@ pub fn r2spawn(file string, cmd string) !R2Pipe {
 				}
 				msg += rune(ch).str()
 			}
-			return error('unexpected handshake "$msg", expected null byte')
+			return error('unexpected handshake "${msg}", expected null byte')
 		}
 	} else {
 		C.close(0)
@@ -73,7 +73,7 @@ pub fn r2spawn(file string, cmd string) !R2Pipe {
 		C.dup2(input[0], 0)
 		C.dup2(output[1], 1)
 		if cmd == '' {
-			os.execvp(r2_path, ['-q0', file])!
+			os.execvp(r2pipe.r2_path, ['-q0', file])!
 		} else {
 			os.execvp(cmd, [file])!
 		}
@@ -134,7 +134,7 @@ pub fn (mut s R2PipeSide) read_fifo(cb SideCallback) {
 }
 
 pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb SideCallback) &R2PipeSide {
-	path := r2.cmd('===$event').trim_space()
+	path := r2.cmd('===${event}').trim_space()
 	mut side := &R2PipeSide{
 		name: event
 		path: path
@@ -160,7 +160,7 @@ pub fn (r2 &R2Pipe) cmd(command string) string {
 		return ''
 	}
 	cmd := command.replace('\n', ';')
-	sendcmd := '$cmd\n'
+	sendcmd := '${cmd}\n'
 	C.write(r2.out, sendcmd.str, sendcmd.len)
 	maxsz := 1024 * 32
 	unsafe {
@@ -185,7 +185,7 @@ pub fn (mut r2 R2Pipe) free() {
 	if r2.sides.len > 0 {
 		// r2cmd
 		for mut s in r2.sides {
-			r2.cmd('===-$s.name')
+			r2.cmd('===-${s.name}')
 			s.free()
 		}
 	}
