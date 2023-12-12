@@ -1,4 +1,5 @@
 all:
+	v -shared .
 	v test .
 
 test:

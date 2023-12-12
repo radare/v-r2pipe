@@ -16,7 +16,7 @@ mut:
 	sides []&R2PipeSide
 }
 
-[heap]
+@[heap]
 pub struct R2PipeSide {
 pub:
 	name      string
@@ -25,7 +25,7 @@ pub mut:
 	fd   int
 	path string
 	user voidptr
-	cb   SideCallback [required]
+	cb   SideCallback @[required]
 	th   thread
 }
 
@@ -37,7 +37,7 @@ pub fn (s R2PipeSide) write(a string) {
 	}
 }
 
-[direct_array_access]
+@[direct_array_access]
 pub fn r2spawn(file string, cmd string) !R2Pipe {
 	input := [2]int{}
 	output := [2]int{}
@@ -154,7 +154,7 @@ pub fn (mut r2 R2Pipe) on(event string, user voidptr, cb SideCallback) &R2PipeSi
 }
 
 fn C.fcntl(int, int, int)
-[direct_array_access]
+@[direct_array_access]
 pub fn (r2 &R2Pipe) cmd(command string) string {
 	if r2.inp < 0 {
 		return ''
