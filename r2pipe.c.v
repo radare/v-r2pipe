@@ -2,9 +2,7 @@ module r2pipe
 
 import os
 
-const (
-	r2_path = 'radare2'
-)
+const r2_path = 'radare2'
 
 pub type SideCallback = fn (s R2PipeSide, msg string) bool
 
